@@ -32,12 +32,12 @@ interface AddItemModalProps {
 }
 
 const categories = [
-  "Starters",
-  "Main Course", 
-  "Desserts",
-  "Beverages",
-  "Snacks",
-  "Salads"
+  "starters",
+  "main-course", 
+  "desserts",
+  "drinks",
+  "beverages",
+  "snacks"
 ];
 
 export default function AddItemModal({ open, onOpenChange }: AddItemModalProps) {

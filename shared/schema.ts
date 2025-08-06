@@ -120,6 +120,8 @@ export const MENU_ITEMS: FullMenuItem[] = [];
 export const MENU_CATEGORIES = [
   { id: "starters", name: "Starters" },
   { id: "main-course", name: "Main Course" },
-  { id: "drinks", name: "Drinks" },
   { id: "desserts", name: "Desserts" },
+  { id: "drinks", name: "Drinks" },
+  { id: "beverages", name: "Beverages" },
+  { id: "snacks", name: "Snacks" },
 ];
