@@ -1,37 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import type { FullMenuItem } from "@shared/schema";
 
 export const useMenuItems = () => {
   return useQuery({
-    queryKey: ['/api/menu-items'],
+    queryKey: ['/api/menu'],
     queryFn: async (): Promise<FullMenuItem[]> => {
       try {
-        const menuQuery = query(
-          collection(db, "menuItems"),
-          orderBy("createdAt", "desc")
-        );
-        
-        const snapshot = await getDocs(menuQuery);
-        
-        if (snapshot.empty) {
-          return [];
+        const response = await fetch('/api/menu');
+        if (!response.ok) {
+          throw new Error('Failed to fetch menu items');
         }
-
-        const menuItems: FullMenuItem[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as FullMenuItem[];
-
-        return menuItems;
+        return response.json();
       } catch (error) {
         console.error("Error fetching menu items:", error);
         throw error;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 5 * 1000, // Auto refresh every 5 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };
 
