@@ -153,6 +153,14 @@ export class MemStorage implements IStorage {
   }
 
   async createTable(table: InsertTable): Promise<Table> {
+    // Check for duplicate table numbers
+    const existingTables = Array.from(this.tables.values());
+    const duplicateTable = existingTables.find(t => t.number === table.number);
+    
+    if (duplicateTable) {
+      throw new Error(`Table number ${table.number} already exists. Please choose a different number.`);
+    }
+    
     const id = (this.currentId++).toString();
     const newTable: Table = { 
       ...table, 
