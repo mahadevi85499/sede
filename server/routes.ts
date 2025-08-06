@@ -73,6 +73,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/orders/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const result = await storage.updateOrder(id, updates);
+      if (!result) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ error: "Failed to update order" });
+    }
+  });
+
   // Tables API
   app.get("/api/tables", async (req, res) => {
     try {

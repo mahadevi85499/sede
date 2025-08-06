@@ -1,52 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
-import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import OrderCard from "@/components/staff/order-card";
 import ServiceAlert from "@/components/staff/service-alert";
-import type { OrderEvent, ServiceRequestEvent } from "@shared/schema";
-
-interface OrderWithId extends OrderEvent {
-  id: string;
-}
-
-interface ServiceRequestWithId extends ServiceRequestEvent {
-  id: string;
-}
 
 export default function StaffPanel() {
-  const [orders, setOrders] = useState<OrderWithId[]>([]);
-  const [serviceRequests, setServiceRequests] = useState<ServiceRequestWithId[]>([]);
+  // Fetch orders from Express API with auto-refresh
+  const { data: orders = [], isLoading: ordersLoading } = useQuery<any[]>({
+    queryKey: ['/api/orders'],
+    refetchInterval: 3000, // Refresh every 3 seconds
+    staleTime: 0,
+  });
 
-  useEffect(() => {
-    // Set up real-time listener for orders and service requests
-    const q = query(
-      collection(db, "events"),
-      where("type", "in", ["order", "service-request"]),
-      orderBy("timestamp", "asc")
-    );
+  // Filter only pending and preparing orders for staff
+  const activeOrders = orders.filter(order => 
+    order.status === 'pending' || order.status === 'preparing'
+  );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const ordersData: OrderWithId[] = [];
-      const requestsData: ServiceRequestWithId[] = [];
-
-      querySnapshot.docs.forEach((doc) => {
-        const data = doc.data();
-        if (data.type === "order") {
-          ordersData.push({ ...data, id: doc.id } as OrderWithId);
-        } else if (data.type === "service-request") {
-          requestsData.push({ ...data, id: doc.id } as ServiceRequestWithId);
-        }
-      });
-
-      setOrders(ordersData);
-      setServiceRequests(requestsData);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // Fetch service requests (placeholder for now)
+  const { data: serviceRequests = [] } = useQuery<any[]>({
+    queryKey: ['/api/service-requests'],
+    refetchInterval: 5000,
+    retry: false, // Don't retry if endpoint doesn't exist yet
+  });
 
   return (
     <div className="min-h-screen bg-primary-dark">
@@ -68,7 +46,7 @@ export default function StaffPanel() {
           <div className="flex items-center space-x-2 sm:space-x-4">
             <div className="text-center">
               <p className="text-gray-400 text-xs sm:text-sm">Orders</p>
-              <p className="text-success-green font-bold text-lg sm:text-xl">{orders.length}</p>
+              <p className="text-success-green font-bold text-lg sm:text-xl">{activeOrders.length}</p>
             </div>
             <div className="text-center">
               <p className="text-gray-400 text-xs sm:text-sm">Requests</p>
@@ -91,12 +69,17 @@ export default function StaffPanel() {
             </div>
 
             <div className="space-y-4">
-              {orders.length === 0 ? (
+              {ordersLoading ? (
                 <div className="bg-secondary-dark rounded-xl p-6 text-center text-gray-400">
-                  No active orders
+                  <p>Loading orders...</p>
+                </div>
+              ) : activeOrders.length === 0 ? (
+                <div className="bg-secondary-dark rounded-xl p-6 text-center text-gray-400">
+                  <h3 className="text-lg font-medium mb-2">No active orders</h3>
+                  <p className="text-sm">New orders will appear here automatically</p>
                 </div>
               ) : (
-                orders.map((order) => (
+                activeOrders.map((order) => (
                   <OrderCard key={order.id} order={order} />
                 ))
               )}

@@ -1,34 +1,55 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MENU_ITEMS } from "@shared/schema";
-import type { OrderEvent } from "@shared/schema";
-
-interface OrderWithId extends OrderEvent {
-  id: string;
-}
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderCardProps {
-  order: OrderWithId;
+  order: any; // Using any for now since the order structure from API is different
 }
 
 export default function OrderCard({ order }: OrderCardProps) {
-  const getItemPrice = (itemId: string): number => {
-    const menuItem = MENU_ITEMS.find(item => item.id === itemId);
-    return menuItem?.price || 0;
-  };
-
-  const calculateTotal = (): number => {
-    return order.items.reduce((total, item) => {
-      const itemPrice = getItemPrice(item.id);
-      return total + (itemPrice * item.quantity);
-    }, 0);
-  };
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const getTimeAgo = (): string => {
-    // For now, returning a static value since we don't have timestamp parsing
-    return "2 minutes ago";
+    if (!order.createdAt) return "Just now";
+    const created = new Date(order.createdAt);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - created.getTime()) / (1000 * 60));
+    
+    if (diffMinutes < 1) return "Just now";
+    if (diffMinutes < 60) return `${diffMinutes} min ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    return `${diffHours}h ${diffMinutes % 60}m ago`;
   };
+
+  // Update order status mutation
+  const updateOrderMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) throw new Error("Failed to update order");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "Order updated",
+        description: `Order status changed successfully`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update order status",
+        variant: "destructive",
+      });
+    }
+  });
 
   return (
     <Card className="bg-secondary-dark border-gray-700">
@@ -43,36 +64,52 @@ export default function OrderCard({ order }: OrderCardProps) {
               <p className="text-gray-400 text-sm">{getTimeAgo()}</p>
             </div>
           </div>
-          <Badge className="bg-warning-yellow text-black">Waiting</Badge>
+          <Badge className={`${order.status === 'pending' ? 'bg-warning-yellow text-black' : 'bg-blue-500 text-white'}`}>
+            {order.status === 'pending' ? 'Waiting' : 'Preparing'}
+          </Badge>
         </div>
 
         <div className="mb-4">
           <h4 className="font-medium mb-2">Order Items:</h4>
           <ul className="space-y-1">
-            {order.items.map((item, index) => (
+            {order.items.map((item: any, index: number) => (
               <li key={index} className="flex justify-between">
                 <span>
                   {item.quantity}x {item.name}
-                  {item.pack && <span className="text-accent-orange"> (Pack)</span>}
+                  {item.pack && " (Pack)"}
                 </span>
-                <span className="text-gray-400">
-                  ₹{getItemPrice(item.id) * item.quantity}
-                </span>
+                <span className="text-accent-orange">₹{item.price}</span>
               </li>
             ))}
           </ul>
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="text-sm">
-            <span className="text-gray-400">Payment: </span>
-            <span className="text-accent-orange font-medium capitalize">
-              {order.paymentMode}
-            </span>
+          <div>
+            <p className="text-gray-400 text-sm">Total Amount</p>
+            <p className="font-bold text-lg text-accent-orange">₹{order.totalAmount}</p>
+            <p className="text-xs text-gray-500">Payment: {order.paymentMode?.toUpperCase()}</p>
           </div>
-          <Button className="bg-success-green hover:bg-green-600 text-white px-4 py-2 text-sm font-medium">
-            Mark Ready
-          </Button>
+          <div className="flex gap-2">
+            {order.status === 'pending' && (
+              <Button 
+                onClick={() => updateOrderMutation.mutate('preparing')}
+                disabled={updateOrderMutation.isPending}
+                className="bg-success-green hover:bg-success-green/90"
+              >
+                Start Preparing
+              </Button>
+            )}
+            {order.status === 'preparing' && (
+              <Button 
+                onClick={() => updateOrderMutation.mutate('ready')}
+                disabled={updateOrderMutation.isPending}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Mark Ready
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
