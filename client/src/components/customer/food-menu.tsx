@@ -15,7 +15,12 @@ interface FoodMenuProps {
 
 export default function FoodMenu({ cart, setCart }: FoodMenuProps) {
   const [activeCategory, setActiveCategory] = useState("starters");
-  const { data: menuItems = [], isLoading, error } = useMenuItems();
+  // Fetch menu items with real-time sync
+  const { data: menuItems = [], isLoading, error } = useQuery({
+    queryKey: ['/api/menu'],
+    staleTime: 10 * 1000, // 10 seconds for real-time sync
+    refetchInterval: 15 * 1000, // Auto refresh every 15 seconds
+  });
 
   const getItemQuantity = (itemId: string): number => {
     const cartItem = cart.find(item => item.id === itemId);

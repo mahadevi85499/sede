@@ -116,14 +116,25 @@ export default function AddItemModal({ open, onOpenChange }: AddItemModalProps) 
       return response.json();
     },
     onSuccess: () => {
+      // Immediately refresh menu data everywhere
       queryClient.invalidateQueries({ queryKey: ['/api/menu'] });
+      queryClient.refetchQueries({ queryKey: ['/api/menu'] });
+      
       toast({
         title: "Item added successfully!",
-        description: "Menu item has been added to the database",
+        description: "Menu item has been added and is now visible to customers",
       });
       
-      // Reset form and close modal
-      form.reset();
+      // Clean interface - reset everything to default state
+      form.reset({
+        name: "",
+        description: "",
+        price: 0,
+        category: "",
+        isVegetarian: false,
+        isSpicy: false,
+        preparationTime: 15,
+      });
       setImageFile(null);
       setImagePreview(null);
       onOpenChange(false);

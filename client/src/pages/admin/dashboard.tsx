@@ -12,8 +12,11 @@ import {
   Plus,
   Table,
   BarChart3,
-  Settings
+  Settings,
+  Trash2
 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import type { OrderEvent } from "@shared/schema";
 import AddItemModal from "@/components/admin/add-item-modal";
 import TableManagementModal from "@/components/admin/table-management-modal";
@@ -29,18 +32,25 @@ export default function DashboardPage() {
   const [showTableModal, setShowTableModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch orders from API
   const { data: orders = [] } = useQuery({
     queryKey: ['/api/orders'],
+    staleTime: 10 * 1000, // 10 seconds
+    refetchInterval: 15 * 1000, // Auto refresh every 15 seconds
   });
 
-  // Fetch menu items from API
+  // Fetch menu items from API  
   const { data: menuItems = [] } = useQuery({
     queryKey: ['/api/menu'],
+    staleTime: 10 * 1000, // 10 seconds for real-time sync
+    refetchInterval: 15 * 1000, // Auto refresh every 15 seconds
   });
 
-  const todayOrders = orders;
+  const todayOrders = (orders as any[]) || [];
 
   const todayRevenue = todayOrders.reduce((total, order) => {
     return total + order.items.reduce((orderTotal, item) => {
@@ -60,6 +70,45 @@ export default function DashboardPage() {
     };
     return prices[itemId] || 0;
   }
+
+  // Delete menu item mutation
+  const deleteItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      const response = await fetch(`/api/menu/${itemId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete menu item');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Immediately refresh menu data everywhere
+      queryClient.invalidateQueries({ queryKey: ['/api/menu'] });
+      queryClient.refetchQueries({ queryKey: ['/api/menu'] });
+      
+      toast({
+        title: "Item deleted successfully!",
+        description: "Menu item has been removed from the menu",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting menu item:', error);
+      toast({
+        title: "Error deleting item",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteItem = (itemId: string, itemName: string) => {
+    if (window.confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+      deleteItemMutation.mutate(itemId);
+    }
+  };
 
   return (
     <div>
@@ -234,7 +283,7 @@ export default function DashboardPage() {
         <Card className="bg-secondary-dark border-gray-700">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-bold">Menu Items ({menuItems.length})</h3>
+              <h3 className="text-lg sm:text-xl font-bold">Menu Items ({(menuItems as any[]).length})</h3>
               <Button 
                 onClick={() => setShowAddItemModal(true)}
                 className="bg-accent-orange hover:bg-orange-400 text-white text-xs sm:text-sm"
@@ -245,7 +294,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {menuItems.map((item: any) => (
+              {(menuItems as any[]).map((item: any) => (
                 <div key={item.id} className="bg-primary-dark p-4 rounded-lg border border-gray-700">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -271,15 +320,26 @@ export default function DashboardPage() {
                         {item.inStock ? 'In Stock' : 'Out of Stock'}
                       </Badge>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      {item.isVegetarian && (
-                        <div className="w-4 h-4 border border-success-green rounded-sm flex items-center justify-center">
-                          <div className="w-2 h-2 bg-success-green rounded-full"></div>
-                        </div>
-                      )}
-                      {item.isSpicy && (
-                        <span className="text-red-500 text-xs">🌶️</span>
-                      )}
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
+                        {item.isVegetarian && (
+                          <div className="w-4 h-4 border border-success-green rounded-sm flex items-center justify-center">
+                            <div className="w-2 h-2 bg-success-green rounded-full"></div>
+                          </div>
+                        )}
+                        {item.isSpicy && (
+                          <span className="text-red-500 text-xs">🌶️</span>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-1 h-8 w-8"
+                        onClick={() => handleDeleteItem(item.id, item.name)}
+                        disabled={deleteItemMutation.isPending}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
                     </div>
                   </div>
                   
@@ -292,7 +352,7 @@ export default function DashboardPage() {
                 </div>
               ))}
               
-              {menuItems.length === 0 && (
+              {(menuItems as any[]).length === 0 && (
                 <div className="col-span-full text-center text-gray-400 py-8">
                   <p>No menu items yet</p>
                   <Button 

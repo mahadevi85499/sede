@@ -28,6 +28,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/menu/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await storage.deleteMenuItem(id);
+      res.json({ success: result });
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      res.status(500).json({ error: "Failed to delete menu item" });
+    }
+  });
+
   // Orders API
   app.get("/api/orders", async (req, res) => {
     try {
