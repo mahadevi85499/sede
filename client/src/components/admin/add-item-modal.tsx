@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { uploadImage } from "@/lib/cloudinary";
+import { uploadImage } from "@/lib/image-upload";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
