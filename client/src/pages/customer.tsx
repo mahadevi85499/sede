@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Utensils, ShoppingCart, HelpCircle, Calendar, Gift, Clock, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { Reservations } from "@/components/customer/reservations";
 import { LoyaltyRewards } from "@/components/customer/loyalty-rewards";
 import { OrderAhead } from "@/components/customer/order-ahead";
 import type { MenuItem } from "@shared/schema";
+import type { Table } from "@shared/drizzle-schema";
 
 export default function CustomerPanel() {
   const [tableNumber, setTableNumber] = useState<number | null>(null);
@@ -23,6 +25,12 @@ export default function CustomerPanel() {
   const [showCart, setShowCart] = useState(false);
   const [showService, setShowService] = useState(false);
   const [activeTab, setActiveTab] = useState("menu");
+
+  // Fetch available tables
+  const { data: tables = [], isLoading: tablesLoading } = useQuery<Table[]>({
+    queryKey: ['/api/tables'],
+    enabled: showTableSelector,
+  });
 
   useEffect(() => {
     // Get table number from URL path (e.g., /5 for table 5)
@@ -59,19 +67,29 @@ export default function CustomerPanel() {
         <Card className="bg-secondary-dark border-gray-700 w-full max-w-md">
           <CardContent className="p-6">
             <h2 className="text-2xl font-bold mb-4 text-center">Select Your Table</h2>
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {[1,2,3,4,5,6,7,8,9,10,11,12].map((table) => (
-                <Button
-                  key={table}
-                  variant="outline"
-                  size="sm"
-                  className="aspect-square bg-primary-dark border-gray-600 hover:border-accent-orange"
-                  onClick={() => handleTableSelect(table)}
-                >
-                  {table}
-                </Button>
-              ))}
-            </div>
+            
+            {tablesLoading ? (
+              <div className="text-center py-8 text-gray-400">Loading tables...</div>
+            ) : tables.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <p>No tables available</p>
+                <p className="text-sm">Please contact staff for assistance</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {tables.map((table) => (
+                  <Button
+                    key={table.id}
+                    variant="outline"
+                    size="sm"
+                    className="aspect-square bg-primary-dark border-gray-600 hover:border-accent-orange"
+                    onClick={() => handleTableSelect(table.number)}
+                  >
+                    {table.number}
+                  </Button>
+                ))}
+              </div>
+            )}
             <div className="flex space-x-2">
               <Input
                 type="number"

@@ -30,7 +30,7 @@ type TableFormData = z.infer<typeof tableSchema>;
 export default function TableManagementModal({ open, onOpenChange }: TableManagementModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [editingTable, setEditingTable] = useState<Table | null>(null);
+
 
   const form = useForm<TableFormData>({
     resolver: zodResolver(tableSchema),
@@ -40,21 +40,7 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
     },
   });
 
-  // Fetch existing tables
-  const { data: tables = [], isLoading: tablesLoading } = useQuery<Table[]>({
-    queryKey: ['/api/tables'],
-    enabled: open,
-  });
 
-  // Reset form when editing changes
-  useEffect(() => {
-    if (editingTable) {
-      form.reset({
-        number: editingTable.number,
-        seats: editingTable.seats,
-      });
-    }
-  }, [editingTable, form]);
 
   // Add table mutation
   const addTableMutation = useMutation({
@@ -68,6 +54,7 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
     onSuccess: (newTable: Table) => {
       form.reset();
       queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
+      onOpenChange(false);
       toast({
         title: "Table added successfully",
         description: `Table ${newTable.number} is ready for QR code generation. URL: /${newTable.number}`,
@@ -82,55 +69,8 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
     },
   });
 
-  // Update table mutation
-  const updateTableMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Table> }) => {
-      const response = await apiRequest(`/api/tables/${id}`, 'PUT', data);
-      return response as unknown as Table;
-    },
-    onSuccess: (updatedTable: Table) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
-      setEditingTable(null);
-      form.reset();
-      toast({
-        title: "Table updated successfully",
-        description: `Table ${updatedTable.number} has been updated.`,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error updating table",
-        description: error.message || "Please try again later",
-        variant: "destructive",
-      });
-    },
-  });
-
   const onSubmit = (data: TableFormData) => {
-    if (editingTable) {
-      updateTableMutation.mutate({
-        id: editingTable.id,
-        data: { ...data }
-      });
-    } else {
-      addTableMutation.mutate(data);
-    }
-  };
-
-  const handleEditTable = (table: Table) => {
-    setEditingTable(table);
-    form.reset({
-      number: table.number,
-      seats: table.seats,
-    });
-  };
-
-  const handleCancelEdit = () => {
-    setEditingTable(null);
-    form.reset({
-      number: 1,
-      seats: 4,
-    });
+    addTableMutation.mutate(data);
   };
 
   return (
@@ -140,72 +80,10 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
           <DialogTitle className="text-xl font-bold">Table Management</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Existing Tables */}
+        <div className="max-w-md mx-auto">
+          {/* Add New Table Form */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Existing Tables</h3>
-            
-            {tablesLoading ? (
-              <div className="text-center py-8 text-gray-400">Loading tables...</div>
-            ) : tables.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 border border-dashed border-gray-600 rounded-lg">
-                <p>No tables added yet</p>
-                <p className="text-sm">Add your first table to get started</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {tables.map((table) => (
-                  <Card key={table.id} className="bg-primary-dark border-gray-600">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-accent-orange rounded-lg flex items-center justify-center text-white font-bold">
-                            {table.number}
-                          </div>
-                          <div>
-                            <p className="font-medium">Table {table.number}</p>
-                            <p className="text-sm text-gray-400">{table.seats} seats</p>
-                            <p className="text-xs text-gray-500">URL: /{table.number}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={table.status === 'available' ? 'default' : 'secondary'} className="text-xs">
-                            {table.status}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0 border-gray-600 hover:bg-accent-orange/20"
-                            onClick={() => handleEditTable(table)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Add/Edit Table Form */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                {editingTable ? `Edit Table ${editingTable.number}` : 'Add New Table'}
-              </h3>
-              {editingTable && (
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={handleCancelEdit}
-                  className="border-gray-600"
-                >
-                  Cancel
-                </Button>
-              )}
-            </div>
+            <h3 className="text-lg font-semibold text-center">Add New Table</h3>
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -255,9 +133,9 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
                 <Button 
                   type="submit" 
                   className="w-full bg-accent-orange hover:bg-accent-orange/80"
-                  disabled={addTableMutation.isPending || updateTableMutation.isPending}
+                  disabled={addTableMutation.isPending}
                 >
-                  {editingTable ? 'Update Table' : 'Add Table'}
+                  Add Table
                 </Button>
               </form>
             </Form>
