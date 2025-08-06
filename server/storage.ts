@@ -225,6 +225,21 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Use MemStorage for now until Supabase database tables are created
-// Switch to DatabaseService after running the SQL schema in Supabase
-export const storage = new MemStorage();
+// Initialize storage based on DATABASE_URL
+function initializeStorage(): IStorage {
+  if (process.env.DATABASE_URL) {
+    try {
+      const { DatabaseService } = require('./database');
+      console.log('📦 Storage initialized: Supabase Database');
+      return new DatabaseService();
+    } catch (error) {
+      console.log('⚠️ Database connection failed, falling back to in-memory storage:', error);
+      return new MemStorage();
+    }
+  } else {
+    console.log('📦 Storage initialized: In-Memory Storage');
+    return new MemStorage();
+  }
+}
+
+export const storage = initializeStorage();

@@ -2,6 +2,16 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Set up Supabase environment variables
+if (process.env.SUPABASE_DB_PASSWORD) {
+  process.env.DATABASE_URL = `postgresql://postgres:${process.env.SUPABASE_DB_PASSWORD}@db.mbevcelithyytcdbvrxx.supabase.co:5432/postgres`;
+  process.env.SUPABASE_URL = 'https://mbevcelithyytcdbvrxx.supabase.co';
+  process.env.SUPABASE_ANON_KEY = 'sb_publishable_rTqRlr0PDAPvaOd-7GgNzQ_0puIqbFv';
+  console.log('✅ Supabase environment configured');
+} else {
+  console.log('⚠️  SUPABASE_DB_PASSWORD not found, using in-memory storage');
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

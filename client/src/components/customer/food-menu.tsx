@@ -6,7 +6,7 @@ import { Plus, Minus, Loader2 } from "lucide-react";
 import { MENU_CATEGORIES } from "@shared/schema";
 import type { MenuItem } from "@shared/schema";
 import { useMenuItems } from "@/hooks/useMenuItems";
-import { getOptimizedImageUrl } from "@/lib/cloudinary";
+import { getOptimizedImageUrl } from "@/lib/image-upload";
 
 interface FoodMenuProps {
   cart: MenuItem[];
@@ -99,7 +99,7 @@ export default function FoodMenu({ cart, setCart }: FoodMenuProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {filteredItems.map((item) => {
             const quantity = getItemQuantity(item.id);
-            const optimizedImageUrl = item.image ? getOptimizedImageUrl(item.image, { width: 400, height: 300 }) : null;
+            const optimizedImageUrl = item.image ? getOptimizedImageUrl(item.image) : null;
             
             return (
               <Card key={item.id} className="bg-secondary-dark border-gray-700">
