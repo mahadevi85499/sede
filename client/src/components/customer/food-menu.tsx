@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, Loader2 } from "lucide-react";
 import { MENU_CATEGORIES } from "@shared/schema";
 import type { MenuItem } from "@shared/schema";
-import { useMenuItems } from "@/hooks/useMenuItems";
+
 import { getOptimizedImageUrl } from "@/lib/image-upload";
 
 interface FoodMenuProps {
