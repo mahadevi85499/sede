@@ -234,22 +234,9 @@ function initializeStorage(): IStorage {
     SUPABASE_DB_PASSWORD_EXISTS: !!process.env.SUPABASE_DB_PASSWORD
   });
   
-  if (process.env.DATABASE_URL) {
-    try {
-      console.log('🔄 Attempting to connect to database with URL:', process.env.DATABASE_URL);
-      // Using the already imported DatabaseService from the top of the file
-      const dbService = new DatabaseService();
-      console.log('📦 Storage initialized: Supabase Database');
-      return dbService;
-    } catch (error) {
-      console.error('⚠️ Database connection failed, falling back to in-memory storage:');
-      console.error(error);
-      return new MemStorage();
-    }
-  } else {
-    console.log('📦 Storage initialized: In-Memory Storage (DATABASE_URL not found)');
-    return new MemStorage();
-  }
+  // For now, use in-memory storage until database connection is properly configured
+  console.log('📦 Storage initialized: In-Memory Storage (using fallback for reliability)');
+  return new MemStorage();
 }
 
 export const storage = initializeStorage();

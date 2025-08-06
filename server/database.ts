@@ -176,5 +176,3 @@ export class DatabaseService {
   }
 }
 
-// Import eq function for queries
-import { eq } from 'drizzle-orm';
