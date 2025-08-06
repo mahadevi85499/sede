@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 3.7%, 15.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(14, 100%, 64%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+
+  /* Custom colors for the hotel system */
+  --primary-dark: hsl(240, 10%, 11%);
+  --secondary-dark: hsl(240, 5%, 16%);
+  --accent-orange: hsl(14, 100%, 64%);
+  --success-green: hsl(160, 100%, 41%);
+  --warning-yellow: hsl(45, 100%, 51%);
+  --danger-red: hsl(348, 83%, 62%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 3.7%, 15.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(14, 100%, 64%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .bg-primary-dark {
+    background-color: var(--primary-dark);
+  }
+  
+  .bg-secondary-dark {
+    background-color: var(--secondary-dark);
+  }
+  
+  .bg-accent-orange {
+    background-color: var(--accent-orange);
+  }
+  
+  .bg-success-green {
+    background-color: var(--success-green);
+  }
+  
+  .bg-warning-yellow {
+    background-color: var(--warning-yellow);
+  }
+  
+  .bg-danger-red {
+    background-color: var(--danger-red);
+  }
+  
+  .text-accent-orange {
+    color: var(--accent-orange);
+  }
+  
+  .text-success-green {
+    color: var(--success-green);
+  }
+  
+  .text-warning-yellow {
+    color: var(--warning-yellow);
+  }
+  
+  .text-danger-red {
+    color: var(--danger-red);
+  }
+  
+  .border-accent-orange {
+    border-color: var(--accent-orange);
+  }
+  
+  .border-success-green {
+    border-color: var(--success-green);
+  }
+  
+  .border-warning-yellow {
+    border-color: var(--warning-yellow);
+  }
+  
+  .scrollbar-hide {
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}

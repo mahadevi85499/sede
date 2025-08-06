@@ -1,0 +1,96 @@
+Of course. To build a bigger, better system, we need bigger, better tests. Here are the test cases for the advanced "Restaurant Operating System" features we discussed, in the easy-to-copy format you prefer.
+
+These tests cover the three core pillars: The Customer Experience, the Business Command Center, and the Staff Workflow.
+
+***
+
+### 📋 **Test Cases - The Restaurant Operating System (ROS)**
+
+**Pillar 1: The "Total Experience" Customer App**
+
+**TC-ROS-01:**
+* **Feature:** Reservations
+* **Scenario:** A customer successfully books a table for a future date.
+* **Steps:**
+    1.  Customer opens the app and navigates to the "Reservations" tab.
+    2.  Selects a future date (e.g., tomorrow, July 28, 2025).
+    3.  Selects an available time slot (e.g., 8:00 PM).
+    4.  Confirms the booking details.
+* **Expected Result:** The customer receives a success confirmation. The reservation appears in their "My Bookings" section and in the Admin Panel's reservation schedule.
+
+**TC-ROS-02:**
+* **Feature:** Loyalty & Rewards
+* **Scenario:** Loyalty points are correctly awarded after an order is paid.
+* **Steps:**
+    1.  A customer with a loyalty account completes and pays for an order.
+    2.  The customer navigates to the "Rewards" tab in the app.
+* **Expected Result:** The customer's point balance has increased corresponding to the value of the order they just paid for.
+
+**TC-ROS-03:**
+* **Feature:** Order Ahead (Takeout)
+* **Scenario:** A customer places a takeout order for a later time today.
+* **Steps:**
+    1.  Customer selects "Order Ahead" and chooses the "Takeout" option.
+    2.  Adds items to the cart.
+    3.  At checkout, selects a pickup time (e.g., 1:00 PM today).
+    4.  Completes payment.
+* **Expected Result:** The customer receives a confirmation with the pickup time. The order appears in the Kitchen Display System (KDS) scheduled to be prepared before 1:00 PM.
+
+---
+
+**Pillar 2: The "Business Command Center" Admin Panel**
+
+**TC-ROS-04:**
+* **Feature:** Analytics Dashboard
+* **Scenario:** The "Menu Intelligence" widget correctly identifies the most popular item.
+* **Steps:**
+    1.  Multiple orders are placed throughout the day, with one item being ordered more than any other.
+    2.  The admin logs in and views the Analytics Dashboard.
+* **Expected Result:** The "Top Selling Items" widget lists the most-ordered item at the top.
+
+**TC-ROS-05:**
+* **Feature:** Dynamic Menu & Inventory Control
+* **Scenario:** Admin marks an item as "out of stock," making it unavailable to customers.
+* **Steps:**
+    1.  Admin navigates to "Menu & Inventory" in the panel.
+    2.  Finds an item (e.g., "Paneer Butter Masala") and sets its inventory count to "0".
+    3.  Saves the change.
+    4.  A customer opens their app and browses the menu.
+* **Expected Result:** The "Paneer Butter Masala" is grayed out on the customer's menu and displays a "Sold Out" label, and the "Add to Cart" button is disabled.
+
+**TC-ROS-06:**
+* **Feature:** Customer Feedback Hub
+* **Scenario:** A customer's feedback appears in the admin panel linked to their order.
+* **Steps:**
+    1.  A customer pays their bill and is prompted to leave a rating and review in the app.
+    2.  They submit a 4-star rating with a comment.
+    3.  The admin logs in and navigates to the "Feedback Hub".
+* **Expected Result:** The new 4-star review is visible at the top of the list, showing the comment, table number, and order details it was associated with.
+
+---
+
+**Pillar 3: The "Hyper-Efficient" Staff Workflow**
+
+**TC-ROS-07:**
+* **Feature:** Kitchen Display System (KDS)
+* **Scenario:** A new order from a customer appears instantly on the KDS.
+* **Steps:**
+    1.  A customer at Table 5 places an order through their app.
+    2.  Observe the KDS screen in the kitchen.
+* **Expected Result:** A new digital ticket for Table 5 appears on the KDS within seconds, listing all ordered items.
+
+**TC-ROS-08:**
+* **Feature:** KDS & Waiter Integration
+* **Scenario:** A waiter is notified when an order is ready for pickup.
+* **Steps:**
+    1.  A chef marks all items for an order on the KDS as "Ready for Pickup".
+    2.  Observe the assigned waiter's device (on the `/staff` view).
+* **Expected Result:** The waiter receives a push notification or an alert on their screen saying "Order for Table 5 is ready".
+
+**TC-ROS-09:**
+* **Feature:** Waiter's Pocket Assistant
+* **Scenario:** A customer's service request is received by the waiter.
+* **Steps:**
+    1.  A customer at Table 8 uses their app to request "More Water".
+    2.  Observe the nearest waiter's device.
+* **Expected Result:** The waiter's device shows a new notification: "Service Request from Table 8: More Water".

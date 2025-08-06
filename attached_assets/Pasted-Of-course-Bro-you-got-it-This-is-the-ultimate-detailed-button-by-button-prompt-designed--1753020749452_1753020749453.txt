@@ -1,0 +1,289 @@
+Of course. Bro, you got it.
+
+This is the **ultimate, detailed, button-by-button prompt** designed for Replit's workspace or its AI. It breaks down all three panels, every feature, every component, and every piece of logic from the ground up.
+
+Paste this into Replit's instruction window, and it will have a crystal-clear blueprint to build the entire system without missing a single detail.
+
+-----
+
+# 🚀 MASTER BUILD PROMPT: Full Smart Hotel System for Replit 🚀
+
+**Objective:** Build a complete Smart Hotel Management System with three separate frontend panels using React and Firebase. The entire system will run on a shared Firestore database. Each panel will be its own React application within this Replit project.
+
+**Technology Stack:**
+
+  - **Frontend:** React (using Vite template on Replit)
+  - **Routing:** `react-router-dom` (for Admin Panel)
+  - **Database:** Firebase Firestore (real-time)
+  - **Deployment:** Each panel will be configured for independent deployment to Firebase Hosting.
+
+-----
+
+## 🌎 **Phase 1: Global Project Setup in Replit**
+
+1.  **Initialize Project:** Start with a new "React (Vite)" template in Replit.
+
+2.  **Install Dependencies:** Open the Shell and run:
+
+    ```bash
+    npm install firebase react-router-dom
+    ```
+
+3.  **Firebase Configuration (Using Replit Secrets):**
+
+      * Go to the "Secrets" tab in Replit.
+      * Create a new secret for each key in your `firebaseConfig` object. Name them exactly like this:
+          * `VITE_API_KEY` = `"AIzaSy...hY4"`
+          * `VITE_AUTH_DOMAIN` = `"gastro...com"`
+          * `VITE_PROJECT_ID` = `"gastro...g0"`
+          * `VITE_STORAGE_BUCKET` = `"gastro...app"`
+          * `VITE_MESSAGING_SENDER_ID` = `"6612...86"`
+          * `VITE_APP_ID` = `"1:661...7b"`
+      * Create a file `src/firebaseConfig.js` to securely load these secrets:
+
+    <!-- end list -->
+
+    ```javascript
+    // src/firebaseConfig.js
+    import { initializeApp } from "firebase/app";
+    import { getFirestore } from "firebase/firestore";
+
+    const firebaseConfig = {
+      apiKey: import.meta.env.VITE_API_KEY,
+      authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_APP_ID
+    };
+
+    const app = initializeApp(firebaseConfig);
+    export const db = getFirestore(app);
+    ```
+
+4.  **Firestore Database Structure:**
+
+      * All panels will interact with a single collection named `events`.
+      * Each document in this collection is an "event" with a `type` field.
+      * **Event Payload:**
+        ```json
+        {
+          "type": "order" | "service-request" | "billing-request",
+          "table": 5, // Number from QR code
+          "items": [{ "name": "Paneer", "quantity": 1, "pack": true }], // For orders
+          "paymentMode": "upi" | "cash", // For orders
+          "request": "water" | "cleaning", // For service requests
+          "timestamp": serverTimestamp() // For sorting
+        }
+        ```
+
+-----
+
+## 👤 **Phase 2: Build the Customer Panel**
+
+**Objective:** A simple, single-page interface for guests to order food and request services after scanning a QR code.
+
+**File Structure:**
+
+  - `src/CustomerApp.js` (Main component for this panel)
+  - `src/components/customer/`
+      - `FoodMenu.js`
+      - `Cart.js`
+      - `ServiceRequests.js`
+
+**Page Breakdown & Logic:**
+
+1.  **`CustomerApp.js` (Main View):**
+
+      * **State:**
+          * `tableNumber` (`useState`): To store the table number.
+          * `cart` (`useState([])`): An array of item objects `{ id, name, quantity, pack }`.
+      * **On Load (`useEffect`):**
+          * Read the table number from the URL query parameter (e.g., `?table=5`). Use `new URLSearchParams(window.location.search).get('table')`. Store it in `tableNumber` state.
+      * **Layout:**
+          * Display a welcome message: `Welcome to Table {tableNumber}`.
+          * Render the `<FoodMenu />` component, passing the `setCart` function.
+          * Render the `<Cart />` component, passing `cart`, `setCart`, and `tableNumber`.
+          * Render the `<ServiceRequests />` component, passing `tableNumber`.
+
+2.  **`FoodMenu.js` Component:**
+
+      * **UI:**
+          * Display hardcoded categories as tabs ("Starters", "Main Course", "Drinks").
+          * Under each category, list items with an "Add to Cart" button.
+      * **Button Logic:**
+          * **"Add to Cart" Button:** When clicked for an item, call the `setCart` function passed in via props to add `{ id: 'item-1', name: 'Paneer Tikka', quantity: 1, pack: false }` to the cart array. If the item is already in the cart, do not add a duplicate entry (the quantity will be handled in the cart).
+
+3.  **`Cart.js` Component:**
+
+      * **UI:**
+          * If the cart is empty, show "Your cart is empty."
+          * If not empty, map over the `cart` array and display each item.
+          * **For each item:**
+              * Show item name.
+              * **Quantity Selector:** A `-` button, a number input, and a `+` button to update the `quantity` for that item in the cart state.
+              * **"Pack this item" Checkbox:** A checkbox to toggle the `pack` boolean for that item.
+          * **Overall Order Options:**
+              * "Pack full order" toggle (sets `pack: true` for all items in cart).
+              * Payment method selection: Radio buttons for "Cash" and "UPI". Store selection in a local state `paymentMode`.
+          * **"Place Order" Button:** A final button at the bottom.
+      * **Button Logic:**
+          * **"Place Order" Button:**
+              * On click, create an `order` object:
+                ```javascript
+                {
+                  type: "order",
+                  table: tableNumber,
+                  items: cart, // The current state of the cart
+                  paymentMode: paymentMode, // "cash" or "upi"
+                  timestamp: serverTimestamp()
+                }
+                ```
+              * Use `addDoc(collection(db, "events"), order)` to send it to Firestore.
+              * After success, clear the cart (`setCart([])`) and show an alert: "Order placed successfully\!"
+
+4.  **`ServiceRequests.js` Component:**
+
+      * **UI:** A row of buttons: "Call Staff", "Request Water", "Request Hot Water", "Request Cleaning", "Request Bill".
+      * **Button Logic (for each button):**
+          * On click, create a `request` object.
+          * **Example for "Request Water":**
+            ```javascript
+            {
+              type: "service-request",
+              request: "water",
+              table: tableNumber,
+              timestamp: serverTimestamp()
+            }
+            ```
+          * **Example for "Request Bill":**
+            ```javascript
+            {
+              type: "billing-request",
+              table: tableNumber,
+              timestamp: serverTimestamp()
+            }
+            ```
+          * Use `addDoc(collection(db, "events"), request)` to send to Firestore.
+          * Show a confirmation alert: "Request sent\!"
+
+-----
+
+## 👨‍🍳 **Phase 3: Build the Staff/Kitchen Panel**
+
+**Objective:** A real-time dashboard for kitchen and floor staff to see new orders and service requests as they happen.
+
+**File Structure:**
+
+  - `src/StaffApp.js`
+  - `src/components/staff/`
+      - `OrderCard.js`
+      - `ServiceAlert.js`
+
+**Page Breakdown & Logic:**
+
+1.  **`StaffApp.js` (Main View):**
+
+      * **State:**
+          * `orders` (`useState([])`): To store incoming food orders.
+          * `serviceRequests` (`useState([])`): To store service alerts.
+      * **On Load (`useEffect`):**
+          * Set up a single, combined `onSnapshot` listener on the `events` collection.
+          * The query should be: `query(collection(db, "events"), where("type", "in", ["order", "service-request"]), orderBy("timestamp", "asc"))`.
+          * Inside the listener, loop through `querySnapshot.docs`. If a doc's `type` is `"order"`, add it to a temporary `ordersData` array. If it's `"service-request"`, add it to a `requestsData` array.
+          * Finally, update state: `setOrders(ordersData)` and `setServiceRequests(requestsData)`.
+          * **Crucially, return the `unsubscribe` function** in `useEffect`'s cleanup phase.
+      * **Layout:**
+          * A two-column layout.
+          * **Left Column (Orders):** `<h2>New Orders</h2>`. Map over the `orders` state and render an `<OrderCard />` for each.
+          * **Right Column (Requests):** `<h2>Service Alerts</h2>`. Map over the `serviceRequests` state and render a `<ServiceAlert />` for each.
+
+2.  **`OrderCard.js` Component:**
+
+      * **Props:** `order`.
+      * **UI:**
+          * A card displaying:
+              * Table Number: `<h3>Table {order.table}</h3>`
+              * Status: A badge showing "Waiting" (this can be extended later).
+              * Items List: Map over `order.items` and show `<li>{item.quantity} x {item.name}</li>`.
+              * If `item.pack` is true, add a `(Pack)` tag next to the item name.
+
+3.  **`ServiceAlert.js` Component:**
+
+      * **Props:** `request`.
+      * **State:** `timeLeft` (`useState(30)`).
+      * **Logic (`useEffect`):**
+          * On component mount, start a `setInterval` that decrements `timeLeft` every second.
+          * If `timeLeft` reaches 0, clear the interval and automatically call the `handleDone` function.
+          * The `useEffect` cleanup function must clear the interval (`clearInterval`) to prevent memory leaks.
+      * **UI:**
+          * Display: `Table {request.table} needs {request.request}`.
+          * Display the countdown timer: `({timeLeft}s)`.
+          * A **"Mark as Done" button**.
+      * **Button Logic:**
+          * **"Mark as Done":**
+              * On click, call the `handleDone` function.
+              * The `handleDone` function will use `deleteDoc(doc(db, "events", request.id))` to remove the request from Firestore, which will cause it to disappear from the UI in real-time.
+
+-----
+
+## 👨‍💼 **Phase 4: Build the Admin Panel**
+
+**Objective:** A multi-page dashboard for the manager to get a high-level view of all table activity, manage billing, and monitor requests. This panel uses React Router.
+
+**File Structure:**
+
+  - `src/AdminApp.js`
+  - `src/pages/admin/`
+      - `OrdersPage.js`
+      - `BillingPage.js`
+      - `RequestsPage.js` (for monitoring)
+  - `src/components/admin/`
+      - `TableStatusCard.js`
+      - `BillingTable.js`
+      - `RequestItem.js`
+      - `Layout.js` (for navigation)
+
+**Page Breakdown & Logic:**
+
+1.  **`AdminApp.js` (Router Setup):**
+
+      * This file sets up the routes.
+      * Wrap everything in `<Router>`. Render a `<Layout />` component that contains the navigation.
+      * Inside `<Routes>`, define the paths:
+          * `<Route path="/" element={<OrdersPage />} />`
+          * `<Route path="/billing" element={<BillingPage />} />`
+          * `<Route path="/requests" element={<RequestsPage />} />`
+
+2.  **`Layout.js` Component:**
+
+      * **UI:** A sidebar with navigation links.
+      * Use `<NavLink>` from `react-router-dom` for the links: "Live Orders" (`/`), "Billing" (`/billing`), and "Service Requests" (`/requests`). `NavLink` will automatically style the active link.
+
+3.  **`OrdersPage.js` Page:**
+
+      * **Logic:** Uses `useEffect` and `onSnapshot` to listen to the `events` collection, `where("type", "==", "order")`.
+      * **UI:** Renders a grid of `<TableStatusCard />` components, one for each active order from Firestore.
+
+4.  **`BillingPage.js` Page:**
+
+      * **Logic:** Uses `useEffect` and `onSnapshot` to listen to `events` `where("type", "==", "billing-request")`.
+      * **UI:** Renders a single `<BillingTable />` component, passing the fetched requests as a prop.
+
+5.  **`RequestsPage.js` Page:**
+
+      * **Logic:** Uses `useEffect` and `onSnapshot` to listen to `events` `where("type", "==", "service-request")`.
+      * **UI:** Renders a list of `<RequestItem />` components. This page is for monitoring only.
+
+6.  **`BillingTable.js` Component:**
+
+      * **Props:** `requests`.
+      * **UI:** An HTML `<table>` with columns: "Table", "Time", "Actions".
+      * It maps over the `requests` prop to create table rows `<tr>`.
+      * **Actions Column:** Contains two buttons per row:
+          * **"Print Bill" Button:** On click, triggers a simple `alert('Printing bill for Table X...')`. No real printer logic.
+          * **"Mark As Paid" Button:** On click, it must delete the document from Firestore using `deleteDoc(doc(db, "events", request.id))`. This will remove it from the table in real-time.
+
+-----
+
+This detailed prompt will guide you or Replit's AI to build the entire system flawlessly, panel by panel, feature by feature. Let's build. 🔥
