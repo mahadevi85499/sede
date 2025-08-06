@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, Loader2 } from "lucide-react";
 import { MENU_CATEGORIES } from "@shared/schema";
 import type { MenuItem } from "@shared/schema";
+import type { MenuItem as DBMenuItem } from "@shared/drizzle-schema";
 
 import { getOptimizedImageUrl } from "@/lib/image-upload";
 
@@ -17,13 +18,13 @@ interface FoodMenuProps {
 export default function FoodMenu({ cart, setCart }: FoodMenuProps) {
   const [activeCategory, setActiveCategory] = useState("starters");
   // Fetch menu items with real-time sync
-  const { data: menuItems = [], isLoading, error } = useQuery({
+  const { data: menuItems = [], isLoading, error } = useQuery<DBMenuItem[]>({
     queryKey: ['/api/menu'],
     staleTime: 0, // Set to 0 to always fetch fresh data
     refetchInterval: 5 * 1000, // Auto refresh every 5 seconds
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    queryFn: async () => {
+    queryFn: async (): Promise<DBMenuItem[]> => {
       const response = await fetch('/api/menu');
       if (!response.ok) {
         throw new Error('Failed to fetch menu items');
@@ -60,7 +61,7 @@ export default function FoodMenu({ cart, setCart }: FoodMenuProps) {
     }
   };
 
-  const filteredItems = menuItems.filter(item => item.category === activeCategory);
+  const filteredItems = menuItems.filter((item: DBMenuItem) => item.category === activeCategory);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -112,7 +113,7 @@ export default function FoodMenu({ cart, setCart }: FoodMenuProps) {
       {/* Menu Items Grid - Mobile Optimized */}
       {!isLoading && !error && filteredItems.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {filteredItems.map((item) => {
+          {filteredItems.map((item: DBMenuItem) => {
             const quantity = getItemQuantity(item.id);
             const optimizedImageUrl = item.image ? getOptimizedImageUrl(item.image) : null;
             
