@@ -79,9 +79,13 @@ export default function Cart({ cart, setCart, tableNumber, onOrderPlaced }: Cart
     try {
       const order: InsertOrderEvent = {
         type: "order",
+        status: "pending",
         table: tableNumber,
         items: cart,
         paymentMode,
+        orderType: "dine-in",
+        loyaltyPointsEarned: Math.floor(total * 0.1), // 10% of total as loyalty points
+        totalAmount: total,
         timestamp: serverTimestamp()
       };
 

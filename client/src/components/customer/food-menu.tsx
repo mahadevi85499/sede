@@ -24,12 +24,20 @@ export default function FoodMenu({ cart, setCart }: FoodMenuProps) {
     refetchInterval: 5 * 1000, // Auto refresh every 5 seconds
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async (): Promise<DBMenuItem[]> => {
-      const response = await fetch('/api/menu');
-      if (!response.ok) {
-        throw new Error('Failed to fetch menu items');
+      try {
+        const response = await fetch('/api/menu');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch menu items: ${response.status}`);
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error('Menu fetch error:', err);
+        throw err;
       }
-      return response.json();
     }
   });
 

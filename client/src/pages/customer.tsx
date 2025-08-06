@@ -27,9 +27,11 @@ export default function CustomerPanel() {
   const [activeTab, setActiveTab] = useState("menu");
 
   // Fetch available tables
-  const { data: tables = [], isLoading: tablesLoading } = useQuery<Table[]>({
+  const { data: tables = [], isLoading: tablesLoading, error: tablesError } = useQuery<Table[]>({
     queryKey: ['/api/tables'],
     enabled: showTableSelector,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   useEffect(() => {
@@ -70,6 +72,11 @@ export default function CustomerPanel() {
             
             {tablesLoading ? (
               <div className="text-center py-8 text-gray-400">Loading tables...</div>
+            ) : tablesError ? (
+              <div className="text-center py-8 text-red-400">
+                <p>Error loading tables</p>
+                <p className="text-sm">Please refresh the page</p>
+              </div>
             ) : tables.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
                 <p>No tables available</p>
@@ -144,7 +151,13 @@ export default function CustomerPanel() {
       </header>
 
       <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 pb-32">
-        <FoodMenu cart={cart} setCart={setCart} />
+        {tableNumber ? (
+          <FoodMenu cart={cart} setCart={setCart} />
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <p>Please select a table to view the menu</p>
+          </div>
+        )}
       </main>
 
       {/* Floating Cart Button */}
