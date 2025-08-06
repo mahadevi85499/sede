@@ -23,13 +23,11 @@ interface TableManagementModalProps {
 const tableSchema = z.object({
   number: z.number().min(1, "Table number must be at least 1"),
   seats: z.number().min(1, "Seats must be at least 1").max(20, "Maximum 20 seats"),
-  status: z.enum(["available", "occupied", "reserved", "maintenance"]).default("available"),
 });
 
 type TableFormData = z.infer<typeof tableSchema>;
 
 export default function TableManagementModal({ open, onOpenChange }: TableManagementModalProps) {
-  const [editingTable, setEditingTable] = useState<Table | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -38,29 +36,22 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
     defaultValues: {
       number: 1,
       seats: 4,
-      status: "available",
     },
   });
 
-  // Fetch tables
-  const { data: tables = [], isLoading } = useQuery<Table[]>({
-    queryKey: ['/api/tables'],
-    queryFn: async () => {
-      const response = await fetch('/api/tables');
-      if (!response.ok) throw new Error('Failed to fetch tables');
-      return response.json();
-    }
-  });
+
 
   // Add table mutation
   const addTableMutation = useMutation({
-    mutationFn: (tableData: TableFormData) => apiRequest('/api/tables', 'POST', tableData),
+    mutationFn: (tableData: TableFormData) => apiRequest('/api/tables', 'POST', { 
+      ...tableData, 
+      status: 'available' 
+    }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
       form.reset();
       toast({
         title: "Table added successfully",
-        description: "The new table is now available for reservations.",
+        description: `Table ${form.getValues().number} is ready for QR code generation.`,
       });
     },
     onError: (error: any) => {
@@ -72,67 +63,8 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
     },
   });
 
-  // Update table mutation
-  const updateTableMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Table> }) => 
-      apiRequest(`/api/tables/${id}`, 'PUT', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tables'] });
-      setEditingTable(null);
-      toast({
-        title: "Table updated successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error updating table",
-        description: error.message || "Please try again later",
-        variant: "destructive",
-      });
-    },
-  });
-
   const onSubmit = (data: TableFormData) => {
-    if (editingTable) {
-      updateTableMutation.mutate({ id: editingTable.id, data });
-    } else {
-      addTableMutation.mutate(data);
-    }
-  };
-
-  const handleEdit = (table: Table) => {
-    setEditingTable(table);
-    form.reset({
-      number: table.number,
-      seats: table.seats,
-      status: table.status as any,
-    });
-  };
-
-  const handleCancel = () => {
-    setEditingTable(null);
-    form.reset();
-  };
-
-  const generateQRCode = (tableNumber: number) => {
-    const tableUrl = `${window.location.origin}/${tableNumber}`;
-    // Open QR code generator in new tab (you can integrate with QR libraries later)
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(tableUrl)}`;
-    window.open(qrUrl, '_blank');
-    toast({
-      title: "QR Code Generated",
-      description: `QR code for table ${tableNumber} opened in new tab`,
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-500';
-      case 'occupied': return 'bg-red-500';
-      case 'reserved': return 'bg-yellow-500';
-      case 'maintenance': return 'bg-gray-500';
-      default: return 'bg-gray-500';
-    }
+    addTableMutation.mutate(data);
   };
 
   return (
@@ -142,12 +74,10 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
           <DialogTitle className="text-xl font-bold">Table Management</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Add/Edit Table Form */}
+        <div className="max-w-md mx-auto">
+          {/* Add Table Form */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">
-              {editingTable ? "Edit Table" : "Add New Table"}
-            </h3>
+            <h3 className="text-lg font-semibold text-center">Add New Table</h3>
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -194,104 +124,26 @@ export default function TableManagementModal({ open, onOpenChange }: TableManage
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-primary-dark border-gray-600">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="available">Available</SelectItem>
-                          <SelectItem value="occupied">Occupied</SelectItem>
-                          <SelectItem value="reserved">Reserved</SelectItem>
-                          <SelectItem value="maintenance">Maintenance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-                <div className="flex gap-2">
-                  <Button 
-                    type="submit" 
-                    className="bg-accent-orange hover:bg-accent-orange/80"
-                    disabled={addTableMutation.isPending || updateTableMutation.isPending}
-                  >
-                    {editingTable ? "Update" : "Add"} Table
-                  </Button>
-                  {editingTable && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleCancel}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-accent-orange hover:bg-accent-orange/80"
+                  disabled={addTableMutation.isPending}
+                >
+                  Add Table
+                </Button>
               </form>
             </Form>
-          </div>
-
-          {/* Tables List */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Current Tables</h3>
             
-            {isLoading ? (
-              <div className="text-center py-4 text-gray-400">Loading tables...</div>
-            ) : tables.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <p>No tables added yet</p>
-                <p className="text-sm">Add your first table to get started</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {tables.map((table) => (
-                  <Card key={table.id} className="bg-primary-dark border-gray-700">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="text-lg font-bold">Table {table.number}</div>
-                          <Badge className={`${getStatusColor(table.status)} text-white`}>
-                            {table.status}
-                          </Badge>
-                          <span className="text-sm text-gray-400">{table.seats} seats</span>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => generateQRCode(table.number)}
-                            className="p-2"
-                          >
-                            <QrCode size={16} />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(table)}
-                            className="p-2"
-                          >
-                            <Edit size={16} />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-xs text-gray-500">
-                        URL: /{table.number}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+            <div className="mt-6 p-4 bg-primary-dark rounded-lg border border-gray-700">
+              <p className="text-sm text-gray-400 text-center">
+                Each table will be accessible via URL: /{`{table_number}`}
+              </p>
+              <p className="text-xs text-gray-500 text-center mt-1">
+                Example: Table 5 → yoursite.com/5
+              </p>
+            </div>
           </div>
         </div>
       </DialogContent>
