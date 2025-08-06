@@ -1,16 +1,15 @@
+// Import initialization module first to ensure environment variables are set
+import { ensureEnvironmentLoaded } from './init.js';
+
+// Ensure environment variables are loaded before any other imports
+ensureEnvironmentLoaded();
+
+// Now import other modules after environment variables are set
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
-// Set up Supabase environment variables
-if (process.env.SUPABASE_DB_PASSWORD) {
-  process.env.DATABASE_URL = `postgresql://postgres:${process.env.SUPABASE_DB_PASSWORD}@db.mbevcelithyytcdbvrxx.supabase.co:5432/postgres`;
-  process.env.SUPABASE_URL = 'https://mbevcelithyytcdbvrxx.supabase.co';
-  process.env.SUPABASE_ANON_KEY = 'sb_publishable_rTqRlr0PDAPvaOd-7GgNzQ_0puIqbFv';
-  console.log('✅ Supabase environment configured');
-} else {
-  console.log('⚠️  SUPABASE_DB_PASSWORD not found, using in-memory storage');
-}
+// Environment variables are now set at the top of the file
 
 const app = express();
 // Increase payload limit for base64 image uploads
@@ -74,8 +73,7 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "localhost"
   }, () => {
     log(`serving on port ${port}`);
   });

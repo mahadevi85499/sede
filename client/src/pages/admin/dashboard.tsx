@@ -13,12 +13,14 @@ import {
   Table,
   BarChart3,
   Settings,
-  Trash2
+  Trash2,
+  Edit
 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import type { OrderEvent } from "@shared/schema";
 import AddItemModal from "@/components/admin/add-item-modal";
+import EditItemModal from "@/components/admin/edit-item-modal";
 import TableManagementModal from "@/components/admin/table-management-modal";
 import ReportsModal from "@/components/admin/reports-modal";
 import SettingsModal from "@/components/admin/settings-modal";
@@ -29,9 +31,11 @@ interface OrderWithId extends OrderEvent {
 
 export default function DashboardPage() {
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -108,6 +112,11 @@ export default function DashboardPage() {
     if (window.confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
       deleteItemMutation.mutate(itemId);
     }
+  };
+
+  const handleEditItem = (item: any) => {
+    setSelectedItem(item);
+    setShowEditItemModal(true);
   };
 
   return (
@@ -331,15 +340,25 @@ export default function DashboardPage() {
                           <span className="text-red-500 text-xs">🌶️</span>
                         )}
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-1 h-8 w-8"
-                        onClick={() => handleDeleteItem(item.id, item.name)}
-                        disabled={deleteItemMutation.isPending}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 p-1 h-8 w-8"
+                          onClick={() => handleEditItem(item)}
+                        >
+                          <Edit size={14} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-1 h-8 w-8"
+                          onClick={() => handleDeleteItem(item.id, item.name)}
+                          disabled={deleteItemMutation.isPending}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   
@@ -374,6 +393,13 @@ export default function DashboardPage() {
         open={showAddItemModal} 
         onOpenChange={setShowAddItemModal} 
       />
+      {selectedItem && (
+        <EditItemModal 
+          open={showEditItemModal} 
+          onOpenChange={setShowEditItemModal}
+          item={selectedItem}
+        />
+      )}
       <TableManagementModal 
         open={showTableModal} 
         onOpenChange={setShowTableModal} 

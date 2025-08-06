@@ -39,6 +39,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/menu/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const result = await storage.updateMenuItem(id, updates);
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating menu item:", error);
+      res.status(500).json({ error: "Failed to update menu item" });
+    }
+  });
+
   // Orders API
   app.get("/api/orders", async (req, res) => {
     try {

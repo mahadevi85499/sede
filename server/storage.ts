@@ -227,17 +227,27 @@ export class MemStorage implements IStorage {
 
 // Initialize storage based on DATABASE_URL
 function initializeStorage(): IStorage {
+  // Log all environment variables for debugging
+  console.log('Environment variables:', {
+    NODE_ENV: process.env.NODE_ENV,
+    DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
+    SUPABASE_DB_PASSWORD_EXISTS: !!process.env.SUPABASE_DB_PASSWORD
+  });
+  
   if (process.env.DATABASE_URL) {
     try {
-      const { DatabaseService } = require('./database');
+      console.log('🔄 Attempting to connect to database with URL:', process.env.DATABASE_URL);
+      // Using the already imported DatabaseService from the top of the file
+      const dbService = new DatabaseService();
       console.log('📦 Storage initialized: Supabase Database');
-      return new DatabaseService();
+      return dbService;
     } catch (error) {
-      console.log('⚠️ Database connection failed, falling back to in-memory storage:', error);
+      console.error('⚠️ Database connection failed, falling back to in-memory storage:');
+      console.error(error);
       return new MemStorage();
     }
   } else {
-    console.log('📦 Storage initialized: In-Memory Storage');
+    console.log('📦 Storage initialized: In-Memory Storage (DATABASE_URL not found)');
     return new MemStorage();
   }
 }

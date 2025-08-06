@@ -19,8 +19,17 @@ export default function FoodMenu({ cart, setCart }: FoodMenuProps) {
   // Fetch menu items with real-time sync
   const { data: menuItems = [], isLoading, error } = useQuery({
     queryKey: ['/api/menu'],
-    staleTime: 10 * 1000, // 10 seconds for real-time sync
-    refetchInterval: 15 * 1000, // Auto refresh every 15 seconds
+    staleTime: 0, // Set to 0 to always fetch fresh data
+    refetchInterval: 5 * 1000, // Auto refresh every 5 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const response = await fetch('/api/menu');
+      if (!response.ok) {
+        throw new Error('Failed to fetch menu items');
+      }
+      return response.json();
+    }
   });
 
   const getItemQuantity = (itemId: string): number => {
