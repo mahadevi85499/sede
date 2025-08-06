@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Table } from "@shared/drizzle-schema";
 
 interface TableSelectorProps {
   onTableSelect: (tableNumber: number) => void;
@@ -13,8 +15,18 @@ export default function TableSelector({ onTableSelect }: TableSelectorProps) {
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
   const [customTable, setCustomTable] = useState("");
 
-  // Default table options (admin can configure this)
-  const defaultTables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  // Fetch available tables from API
+  const { data: tables = [], isLoading } = useQuery<Table[]>({
+    queryKey: ['/api/tables'],
+    queryFn: async () => {
+      const response = await fetch('/api/tables');
+      if (!response.ok) throw new Error('Failed to fetch tables');
+      return response.json();
+    }
+  });
+
+  // Filter available tables
+  const availableTables = tables.filter(table => table.status === 'available');
 
   const handleTableSelect = (table: number) => {
     setSelectedTable(table);
@@ -42,20 +54,29 @@ export default function TableSelector({ onTableSelect }: TableSelectorProps) {
 
           {/* Quick Table Selection */}
           <div className="mb-6">
-            <Label className="text-sm font-medium mb-3 block">Quick Select</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {defaultTables.map((table) => (
-                <Button
-                  key={table}
-                  variant="outline"
-                  size="sm"
-                  className="aspect-square bg-primary-dark border-gray-600 hover:border-accent-orange hover:bg-accent-orange/20"
-                  onClick={() => handleTableSelect(table)}
-                >
-                  {table}
-                </Button>
-              ))}
-            </div>
+            <Label className="text-sm font-medium mb-3 block">Available Tables</Label>
+            {isLoading ? (
+              <div className="text-center py-4 text-gray-400">Loading tables...</div>
+            ) : availableTables.length === 0 ? (
+              <div className="text-center py-4 text-gray-400">
+                <p>No tables available</p>
+                <p className="text-sm">Please contact staff for assistance</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {availableTables.map((table) => (
+                  <Button
+                    key={table.id}
+                    variant="outline"
+                    size="sm"
+                    className="aspect-square bg-primary-dark border-gray-600 hover:border-accent-orange hover:bg-accent-orange/20"
+                    onClick={() => handleTableSelect(table.number)}
+                  >
+                    {table.number}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Custom Table Input */}

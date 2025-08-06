@@ -25,23 +25,32 @@ export default function CustomerPanel() {
   const [activeTab, setActiveTab] = useState("menu");
 
   useEffect(() => {
-    // Get table number from URL query parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const table = urlParams.get('table');
-    if (table) {
-      setTableNumber(parseInt(table, 10));
-    } else {
+    // Get table number from URL path (e.g., /5 for table 5)
+    const path = window.location.pathname;
+    const tableMatch = path.match(/^\/(\d+)$/);
+    
+    if (tableMatch) {
+      const tableNum = parseInt(tableMatch[1], 10);
+      setTableNumber(tableNum);
+    } else if (path === '/customer') {
       setShowTableSelector(true);
+    } else {
+      // Get table number from URL query parameter for backward compatibility
+      const urlParams = new URLSearchParams(window.location.search);
+      const table = urlParams.get('table');
+      if (table) {
+        setTableNumber(parseInt(table, 10));
+      } else {
+        setShowTableSelector(true);
+      }
     }
   }, []);
 
   const handleTableSelect = (table: number) => {
     setTableNumber(table);
     setShowTableSelector(false);
-    // Update URL without reloading
-    const url = new URL(window.location.href);
-    url.searchParams.set('table', table.toString());
-    window.history.replaceState({}, '', url);
+    // Navigate to table-specific URL
+    window.history.replaceState({}, '', `/${table}`);
   };
 
   if (showTableSelector || tableNumber === null) {

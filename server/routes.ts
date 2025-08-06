@@ -73,6 +73,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tables API
+  app.get("/api/tables", async (req, res) => {
+    try {
+      const tables = await storage.getTables();
+      res.json(tables);
+    } catch (error) {
+      console.error("Error fetching tables:", error);
+      res.status(500).json({ error: "Failed to fetch tables" });
+    }
+  });
+
+  app.post("/api/tables", async (req, res) => {
+    try {
+      const table = req.body;
+      const result = await storage.createTable(table);
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating table:", error);
+      res.status(500).json({ error: "Failed to create table" });
+    }
+  });
+
+  app.get("/api/tables/:number", async (req, res) => {
+    try {
+      const tables = await storage.getTables();
+      const table = tables.find(t => t.number === parseInt(req.params.number));
+      if (!table) {
+        return res.status(404).json({ error: "Table not found" });
+      }
+      res.json(table);
+    } catch (error) {
+      console.error("Error fetching table:", error);
+      res.status(500).json({ error: "Failed to fetch table" });
+    }
+  });
+
+  app.put("/api/tables/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const result = await storage.updateTable(id, updates);
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating table:", error);
+      res.status(500).json({ error: "Failed to update table" });
+    }
+  });
+
   app.patch("/api/orders/:id", async (req, res) => {
     try {
       const orderId = req.params.id;

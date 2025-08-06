@@ -16,6 +16,7 @@ function Router() {
       <Route path="/customer" component={CustomerPanel} />
       <Route path="/staff" component={StaffPanel} />
       <Route path="/admin/:page?" component={AdminPanel} />
+      <Route path="/:tableNumber" component={CustomerPanel} />
       <Route component={NotFound} />
     </Switch>
   );

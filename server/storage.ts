@@ -149,10 +149,17 @@ export class MemStorage implements IStorage {
 
   // Table Management
   async getTables(): Promise<Table[]> {
-    return Array.from(this.tables.values());
+    return Array.from(this.tables.values()).sort((a, b) => a.number - b.number);
   }
 
   async createTable(table: InsertTable): Promise<Table> {
+    // Check if table number already exists
+    const existingTables = Array.from(this.tables.values());
+    const tableExists = existingTables.some(t => t.number === table.number);
+    if (tableExists) {
+      throw new Error(`Table ${table.number} already exists`);
+    }
+    
     const id = (this.currentId++).toString();
     const newTable: Table = { 
       ...table, 
@@ -166,6 +173,15 @@ export class MemStorage implements IStorage {
   async updateTable(id: string, updates: Partial<Table>): Promise<Table> {
     const existing = this.tables.get(id);
     if (!existing) throw new Error('Table not found');
+    
+    // Check if updating number and it conflicts
+    if (updates.number && updates.number !== existing.number) {
+      const existingTables = Array.from(this.tables.values());
+      const numberExists = existingTables.some(t => t.id !== id && t.number === updates.number);
+      if (numberExists) {
+        throw new Error(`Table ${updates.number} already exists`);
+      }
+    }
     
     const updated = { ...existing, ...updates };
     this.tables.set(id, updated);
