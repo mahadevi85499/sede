@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FoodMenu from "@/components/customer/food-menu";
+import { useQuery as useMenuQuery } from "@tanstack/react-query";
 import Cart from "@/components/customer/cart";
 import ServiceRequests from "@/components/customer/service-requests";
 import { Reservations } from "@/components/customer/reservations";
@@ -30,6 +31,13 @@ export default function CustomerPanel() {
   const { data: tables = [], isLoading: tablesLoading, error: tablesError } = useQuery<Table[]>({
     queryKey: ['/api/tables'],
     enabled: showTableSelector,
+    retry: 2,
+    retryDelay: 1000,
+  });
+
+  // Fetch menu items for cart pricing
+  const { data: menuItems = [] } = useQuery<any[]>({
+    queryKey: ['/api/menu'],
     retry: 2,
     retryDelay: 1000,
   });
@@ -197,6 +205,7 @@ export default function CustomerPanel() {
               setCart={setCart} 
               tableNumber={tableNumber || 1}
               onOrderPlaced={() => setShowCart(false)}
+              menuItems={menuItems}
             />
           </div>
         </DialogContent>

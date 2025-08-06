@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, X, CreditCard, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { MENU_ITEMS } from "@shared/schema";
+// Removed import of MENU_ITEMS - will use API data instead
 import type { MenuItem, InsertOrderEvent } from "@shared/schema";
 
 interface CartProps {
@@ -17,12 +17,14 @@ interface CartProps {
   setCart: (cart: MenuItem[]) => void;
   tableNumber: number;
   onOrderPlaced?: () => void;
+  menuItems?: any[]; // Add menuItems prop to access real menu data
 }
 
-export default function Cart({ cart, setCart, tableNumber, onOrderPlaced }: CartProps) {
+export default function Cart({ cart, setCart, tableNumber, onOrderPlaced, menuItems = [] }: CartProps) {
   const [paymentMode, setPaymentMode] = useState<"upi" | "cash">("cash");
   const [packFullOrder, setPackFullOrder] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity === 0) {
@@ -55,8 +57,13 @@ export default function Cart({ cart, setCart, tableNumber, onOrderPlaced }: Cart
   };
 
   const getItemPrice = (itemId: string): number => {
-    const menuItem = MENU_ITEMS.find(item => item.id === itemId);
+    const menuItem = menuItems.find(item => item.id === itemId);
     return menuItem?.price || 0;
+  };
+
+  const getItemName = (itemId: string): string => {
+    const menuItem = menuItems.find(item => item.id === itemId);
+    return menuItem?.name || "Unknown Item";
   };
 
   const calculateTotal = (): number => {
@@ -65,6 +72,51 @@ export default function Cart({ cart, setCart, tableNumber, onOrderPlaced }: Cart
       return total + (itemPrice * item.quantity);
     }, 0);
   };
+
+  // Create order mutation
+  const createOrderMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to place order");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      // Clear cart after successful order
+      setCart([]);
+      setPackFullOrder(false);
+      
+      toast({
+        title: "Order placed successfully!",
+        description: `Your order #${data.id.slice(-6)} has been sent to the kitchen. ${paymentMode === 'cash' ? 'Please have cash ready for the waiter.' : 'Please have your UPI/card ready for payment.'}`,
+      });
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      
+      // Call the onOrderPlaced callback if provided
+      if (onOrderPlaced) {
+        onOrderPlaced();
+      }
+    },
+    onError: (error: any) => {
+      console.error("Error placing order:", error);
+      toast({
+        title: "Error placing order",
+        description: `Failed to submit order: ${error?.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
+    }
+  });
 
   const placeOrder = async () => {
     if (cart.length === 0) {
@@ -76,43 +128,23 @@ export default function Cart({ cart, setCart, tableNumber, onOrderPlaced }: Cart
       return;
     }
 
-    try {
-      const order: InsertOrderEvent = {
-        type: "order",
-        status: "pending",
-        table: tableNumber,
-        items: cart,
-        paymentMode,
-        orderType: "dine-in",
-        loyaltyPointsEarned: Math.floor(total * 0.1), // 10% of total as loyalty points
-        totalAmount: total,
-        timestamp: serverTimestamp()
-      };
+    const orderData = {
+      table: tableNumber,
+      items: cart.map(item => ({
+        id: item.id,
+        name: getItemName(item.id),
+        quantity: item.quantity,
+        price: getItemPrice(item.id),
+        pack: item.pack
+      })),
+      paymentMode,
+      orderType: "dine-in",
+      status: "pending",
+      loyaltyPointsEarned: Math.floor(total * 0.1),
+      totalAmount: total,
+    };
 
-      const docRef = await addDoc(collection(db, "events"), order);
-      
-      // Clear cart after successful order
-      setCart([]);
-      setPackFullOrder(false);
-      
-      toast({
-        title: "Order placed successfully!",
-        description: `Your order #${docRef.id.slice(-6)} has been sent to the kitchen. ${paymentMode === 'cash' ? 'Please have cash ready for the waiter.' : 'Please have your UPI/card ready for payment.'}`,
-      });
-
-      // Call the onOrderPlaced callback if provided
-      if (onOrderPlaced) {
-        onOrderPlaced();
-      }
-    } catch (error) {
-      console.error("Error placing order:", error);
-      
-      toast({
-        title: "Error placing order",
-        description: `Failed to submit order: ${(error as any)?.message || 'Unknown error'}`,
-        variant: "destructive"
-      });
-    }
+    createOrderMutation.mutate(orderData);
   };
 
   const total = calculateTotal();
@@ -131,7 +163,7 @@ export default function Cart({ cart, setCart, tableNumber, onOrderPlaced }: Cart
                 <div key={item.id} className="bg-primary-dark rounded-lg p-3">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm">{item.name}</h4>
+                      <h4 className="font-medium text-sm">{getItemName(item.id)}</h4>
                       <p className="text-accent-orange font-semibold text-sm">₹{itemPrice}</p>
                     </div>
                     <Button
